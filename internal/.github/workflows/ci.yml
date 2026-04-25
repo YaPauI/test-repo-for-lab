@@ -1,0 +1,41 @@
+name: CI Pipeline
+
+# Конвеєр запускається при пуші або створенні PR у гілку main
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build-and-test:
+    name: Build, Lint and Test
+    # Використовуємо віртуальну машину на базі останньої Ubuntu
+    runs-on: ubuntu-latest
+
+    steps:
+    # 1. Отримання коду з репозиторію
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    # 2. Встановлення потрібної версії Go на раннері
+    - name: Setup Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.22' # Вкажи тут версію, яка у твоєму файлі go.mod (наприклад, 1.21 або 1.22)
+        cache: false       # Вимикаємо кеш, бо лінтер має свій
+
+    # 3. Перевірка цілісності модулів
+    - name: Verify Dependencies
+      run: go mod verify
+
+    # 4. Запуск лінтера через офіційний action
+    - name: Run Linter
+      uses: golangci/golangci-lint-action@v6
+      with:
+        version: latest
+        args: --timeout=5m
+
+    # 5. Запуск тестів через твій Makefile
+    - name: Run Tests
+      run: make test
