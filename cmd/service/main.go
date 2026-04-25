@@ -1,21 +1,49 @@
 package main
 
 import (
-	"lab4-team-dev/internal/processor" // або "lab3/internal/processor", залежить як у тебе названо модуль
-	"log"
+	"flag"
 	"net/http"
-	_ "net/http/pprof"
+	_ "net/http/pprof" // Важливо для Lab #3
+	"os"
+	"time"
+
+	"lab4-team-dev/internal/processor"
+
+	"github.com/rs/zerolog"
 )
 
 func main() {
+	workers := flag.Int("workers", 5, "number of worker goroutines")
+	reportInterval := flag.Duration("report-every", 2*time.Second, "interval for logging processed stats")
+	flag.Parse()
+
+	// Розбиваємо ланцюжок ініціалізації для кращої читабельності
+	logger := zerolog.New(os.Stdout).
+		With().
+		Timestamp().
+		Str("service", "image-metadata-processor").
+		Logger()
+
 	go func() {
-		log.Println("Pprof server started on :6060")
-		log.Println(http.ListenAndServe("localhost:6060", nil))
+		logger.Info().Msg("Pprof server started on :6060")
+		if err := http.ListenAndServe("localhost:6060", nil); err != nil {
+			logger.Error().Err(err).Msg("Pprof server error")
+		}
 	}()
 
-	// Змінюємо цей лог, щоб створити конфлікт
-	log.Println("Image Metadata Processor started with 10 WORKERS...")
+	logger.Info().
+		Int("workers", *workers).
+		Dur("report_interval", *reportInterval).
+		Msg("Image Metadata Processor started...")
 
-	// Змінюємо кількість воркерів з 5 на 10
-	processor.RunWorkerPool(10)
+	go processor.RunWorkerPool(*workers)
+
+	ticker := time.NewTicker(*reportInterval)
+	defer ticker.Stop()
+
+	for range ticker.C {
+		logger.Info().
+			Int("total_processed", 0).
+			Msg("processing stats")
+	}
 }
