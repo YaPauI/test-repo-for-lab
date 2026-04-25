@@ -1,6 +1,6 @@
 module lab4-team-dev
 
-go 1.26.1
+go 1.24.1
 
 require github.com/rs/zerolog v1.35.1
 
