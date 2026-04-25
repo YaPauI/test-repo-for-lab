@@ -1,20 +1,21 @@
 package main
 
 import (
-	"lab3/internal/processor"
+	"lab4-team-dev/internal/processor" // або "lab3/internal/processor", залежить як у тебе названо модуль
 	"log"
 	"net/http"
-	_ "net/http/pprof" // Важливо для Lab #3
+	_ "net/http/pprof"
 )
 
 func main() {
-	// Запускаємо pprof на окремому порті
 	go func() {
 		log.Println("Pprof server started on :6060")
-		log.Println(http.ListenAndServe("localhost:6060",
-			nil))
+		log.Println(http.ListenAndServe("localhost:6060", nil))
 	}()
-	log.Println("Image Metadata Processor started...")
-	// Запускаємо "проблемний" обробник
-	processor.RunWorkerPool(5)
+
+	// Змінюємо цей лог, щоб створити конфлікт
+	log.Println("Image Metadata Processor started with 10 WORKERS...")
+
+	// Змінюємо кількість воркерів з 5 на 10
+	processor.RunWorkerPool(10)
 }
